@@ -1,9 +1,10 @@
 package com.practice.backend;
 
-import com.practice.backend.entity.CuisineType;
-import com.practice.backend.entity.Rating;
-import com.practice.backend.entity.Restaurant;
-import com.practice.backend.entity.Visitor;
+import com.practice.backend.dto.request.RatingRequestDto;
+import com.practice.backend.dto.request.RestaurantRequestDto;
+import com.practice.backend.dto.request.VisitorRequestDto;
+import com.practice.backend.dto.response.RestaurantResponseDto;
+import com.practice.backend.dto.response.VisitorResponseDto;
 import com.practice.backend.service.RatingService;
 import com.practice.backend.service.RestaurantService;
 import com.practice.backend.service.VisitorService;
@@ -28,27 +29,28 @@ public class TestDataLoader implements CommandLineRunner {
     public void run(String... args) {
         //"Для этого нужно добавить несколько посетителей, несколько ресторанов и оценки"
         //Ну раз удалять не нужно, не буду
-        Visitor visitor1 = new Visitor(null, "Маша", 25, "Женский");
-        Visitor visitor2 = new Visitor(null, "Саша", 30, "Мужчина");
-        Visitor visitor3 = new Visitor(null, null, 28, "Мужчина"); // Анонимный
+        //Починю и это тогда
+        VisitorRequestDto visitor1Request = new VisitorRequestDto("Маша", 25, "Женский");
+        VisitorRequestDto visitor2Request = new VisitorRequestDto("Саша", 30, "Мужчина");
+        VisitorRequestDto visitor3Request = new VisitorRequestDto(null, 28, "Мужчина"); // Анонимный
 
-        visitorService.save(visitor1);
-        visitorService.save(visitor2);
-        visitorService.save(visitor3);
+        VisitorResponseDto visitor1 = visitorService.save(visitor1Request);
+        VisitorResponseDto visitor2 = visitorService.save(visitor2Request);
+        VisitorResponseDto visitor3 = visitorService.save(visitor3Request);
 
-        Restaurant restaurant1 = new Restaurant(null, "Итальянко", "Аутентичная итальянская кухня", CuisineType.ITALIAN, new BigDecimal("25.00"), BigDecimal.ZERO);
-        Restaurant restaurant2 = new Restaurant(null, "Суши высушивай", "Прямиком из Японии", CuisineType.JAPANESE, new BigDecimal("40.00"), BigDecimal.ZERO);
-        restaurantService.save(restaurant1);
-        restaurantService.save(restaurant2);
+        RestaurantRequestDto restaurant1Request = new RestaurantRequestDto("Итальянко", "Аутентичная итальянская кухня", "ITALIAN", new BigDecimal("25.00"));
+        RestaurantRequestDto restaurant2Request = new RestaurantRequestDto("Суши высушивай", "Прямиком из Японии", "JAPANESE", new BigDecimal("40.00"));
 
+        RestaurantResponseDto restaurant1 = restaurantService.save(restaurant1Request);
+        RestaurantResponseDto restaurant2 = restaurantService.save(restaurant2Request);
 
-        Rating rating1 = new Rating(visitor1.getId(), restaurant1.getId(), 5, "Все шикарноо!");
-        Rating rating2 = new Rating(visitor2.getId(), restaurant1.getId(), 4, "Могло быть получше");
-        Rating rating3 = new Rating(visitor3.getId(), restaurant2.getId(), 1, "Отвратительно");
+        RatingRequestDto rating1Request = new RatingRequestDto(visitor1.getId(), restaurant1.getId(), 5, "Все шикарноо!");
+        RatingRequestDto rating2Request = new RatingRequestDto(visitor2.getId(), restaurant1.getId(), 4, "Могло быть получше");
+        RatingRequestDto rating3Request = new RatingRequestDto(visitor3.getId(), restaurant2.getId(), 1, "Отвратительно");
 
-        ratingService.save(rating1);
-        ratingService.save(rating2);
-        ratingService.save(rating3);
+        ratingService.save(rating1Request);
+        ratingService.save(rating2Request);
+        ratingService.save(rating3Request);
 
         System.out.println("Посетители:");
         visitorService.findAll().forEach(System.out::println);

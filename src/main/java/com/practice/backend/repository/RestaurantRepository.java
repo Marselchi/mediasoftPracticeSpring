@@ -22,11 +22,18 @@ public class RestaurantRepository {
         return restaurant;
     }
 
-    public void remove(Long id) {
-        restaurants.removeIf(rest -> rest.getId().equals(id));
+    public boolean remove(Long id) {
+        return restaurants.removeIf(rest -> rest.getId().equals(id));
     }
 
     public List<Restaurant> findAll() {
         return new ArrayList<>(restaurants);
+    }
+
+    public Restaurant findById(Long id) {
+        return restaurants.stream()
+                .filter(rest -> rest.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 }
