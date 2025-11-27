@@ -6,7 +6,6 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Data
@@ -20,17 +19,18 @@ public class RatingRepository {
         return rating;
     }
 
-    public void remove(Long id) {
-        ratings.removeIf(rating -> rating.getVisitorId().equals(id));
+    public boolean remove(Long id) {
+         return ratings.removeIf(rating -> rating.getVisitorId().equals(id));
     }
 
     public List<Rating> findAll() {
         return new ArrayList<>(ratings);
     }
 
-    public Optional<Rating> findById(Long id) {
+    public Rating findById(Long id) {
         return ratings.stream()
                 .filter(rating -> rating.getVisitorId().equals(id))
-                .findFirst();
+                .findFirst()
+                .orElse(null);
     }
 }

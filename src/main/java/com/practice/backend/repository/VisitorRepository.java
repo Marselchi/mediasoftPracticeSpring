@@ -16,16 +16,25 @@ public class VisitorRepository {
     private final AtomicLong idGenerator = new AtomicLong(1);
 
     public Visitor save(Visitor visitor) {
-        visitor.setId(idGenerator.getAndIncrement());
+        if (visitor.getId() == null) {
+            visitor.setId(idGenerator.getAndIncrement());
+        }
         visitors.add(visitor);
         return visitor;
     }
 
-    public void remove(Long id) {
-        visitors.removeIf(visit -> visit.getId().equals(id));
+    public boolean remove(Long id) {
+        return visitors.removeIf(visit -> visit.getId().equals(id));
     }
 
     public List<Visitor> findAll() {
         return new ArrayList<>(visitors);
+    }
+
+    public Visitor findById(Long id) {
+        return visitors.stream()
+                .filter(visit -> visit.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 }
