@@ -8,28 +8,30 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/restaurants")
 @Tag(name = "Рестораны", description = "Операции для управления ресторанами")
 public class RestaurantController {
-
     private final RestaurantService restaurantService;
-
-    public RestaurantController(RestaurantService restaurantService) {
-        this.restaurantService = restaurantService;
-    }
 
     @PostMapping
     @Operation(summary = "Создать новый ресторан", description = "Создает новый ресторан с предоставленными данными")
     @ApiResponse(responseCode = "201", description = "Ресторан успешно создан")
     public ResponseEntity<RestaurantResponseDto> createRestaurant(@Valid @RequestBody RestaurantRequestDto requestDto) {
         RestaurantResponseDto responseDto = restaurantService.save(requestDto);
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @GetMapping("/{id}")
@@ -61,12 +63,7 @@ public class RestaurantController {
     public ResponseEntity<RestaurantResponseDto> updateRestaurant(
             @Parameter(description = "ID ресторана для обновления") @PathVariable Long id,
             @Valid @RequestBody RestaurantRequestDto requestDto) {
-        RestaurantResponseDto responseDto = restaurantService.update(id, requestDto);
-        if (responseDto != null) {
-            return ResponseEntity.ok(responseDto);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(restaurantService.update(id, requestDto));
     }
 
     @DeleteMapping("/{id}")
@@ -75,11 +72,25 @@ public class RestaurantController {
     @ApiResponse(responseCode = "404", description = "Ресторан не найден")
     public ResponseEntity<Void> deleteRestaurant(
             @Parameter(description = "ID ресторана для удаления") @PathVariable Long id) {
-        boolean isDeleted = restaurantService.remove(id);
-        if (isDeleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        restaurantService.remove(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/by-rating")
+    @Operation(summary = "Найти рестораны с рейтингом выше порога", description = "Возвращает рестораны с рейтингом пользователя, большим или равным указанному значению")
+    @ApiResponse(responseCode = "200", description = "Список ресторанов, соответствующих критерию")
+    public ResponseEntity<List<RestaurantResponseDto>> getRestaurantsByMinRating(
+            @RequestParam("minRating") BigDecimal minRating) {
+        List<RestaurantResponseDto> responseDtos = restaurantService.findRestaurantsWithRatingAbove(minRating);
+        return ResponseEntity.ok(responseDtos);
+    }
+
+    @GetMapping("/by-rating-jpql")
+    @Operation(summary = "Найти рестораны с рейтингом выше порога (QUERY)", description = "Возвращает рестораны с рейтингом пользователя, большим или равным указанному значению, используя JPQL-запрос")
+    @ApiResponse(responseCode = "200", description = "Список ресторанов, соответствующих критерию")
+    public ResponseEntity<List<RestaurantResponseDto>> getRestaurantsByMinRatingJPQL(
+            @RequestParam("minRating") BigDecimal minRating) {
+        List<RestaurantResponseDto> responseDtos = restaurantService.findRestaurantsWithRatingAboveJPQL(minRating);
+        return ResponseEntity.ok(responseDtos);
     }
 }

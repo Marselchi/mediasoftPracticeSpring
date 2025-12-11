@@ -5,11 +5,12 @@ import com.practice.backend.dto.response.RestaurantResponseDto;
 import com.practice.backend.entity.Restaurant;
 import com.practice.backend.mapper.RestaurantMapper;
 import com.practice.backend.repository.RestaurantRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +24,8 @@ public class RestaurantService {
         return restaurantMapper.toResponseDto(savedRestaurant);
     }
 
-    public boolean remove(Long id) {
-        return restaurantRepository.remove(id);
+    public void remove(Long id) {
+        restaurantRepository.deleteById(id);
     }
 
     public List<RestaurantResponseDto> findAll() {
@@ -33,22 +34,40 @@ public class RestaurantService {
                 .toList();
     }
 
-    public RestaurantResponseDto update(Long id, @Valid RestaurantRequestDto requestDto) {
-        Restaurant existingRestaurant = restaurantRepository.findById(id);
-        if (existingRestaurant == null) {
-            throw new RuntimeException("Ресторан не найден: " + id);
-        }
+    public RestaurantResponseDto findById(Long id) {
+        Restaurant restaurant = restaurantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + id));
+        return restaurantMapper.toResponseDto(restaurant);
+        /* Можно еще вот так вот, если обрабатывать null надо а не ошибку выкидывать, но в тз не указано
+        *  Restaurant restaurant = restaurantRepository.findById(id).orElse(null);
+        *  return restaurant != null ? restaurantMapper.toResponseDto(restaurant) : null;
+        * */
+    }
+
+    public RestaurantResponseDto update(Long id, RestaurantRequestDto requestDto) {
+        Restaurant existingRestaurant = restaurantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + id));
+
         existingRestaurant.setName(requestDto.getName());
         existingRestaurant.setDescription(requestDto.getDescription());
-        existingRestaurant.setAverageCheck (requestDto.getAverageCheck());
         existingRestaurant.setCuisineType(requestDto.getCuisineType());
+        existingRestaurant.setAverageCheck(requestDto.getAverageCheck());
 
         Restaurant updatedRestaurant = restaurantRepository.save(existingRestaurant);
         return restaurantMapper.toResponseDto(updatedRestaurant);
     }
 
-    public RestaurantResponseDto findById(Long id) {
-        Restaurant restaurant = restaurantRepository.findById(id);
-        return restaurant != null ? restaurantMapper.toResponseDto(restaurant) : null;
+
+    //Query можно было и не писать если что, вот так примерно было бы
+    public List<RestaurantResponseDto> findRestaurantsWithRatingAbove(BigDecimal minRating) {
+        return restaurantRepository.findByUserRatingGreaterThanEqual(minRating).stream()
+                .map(restaurantMapper::toResponseDto)
+                .toList();
+    }
+
+    public List<RestaurantResponseDto> findRestaurantsWithRatingAboveJPQL(BigDecimal minRating) {
+        return restaurantRepository.findRestaurantsWithRatingAbove(minRating).stream()
+                .map(restaurantMapper::toResponseDto)
+                .toList();
     }
 }

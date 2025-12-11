@@ -8,28 +8,29 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.*;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/users")
 @Tag(name = "Посетители", description = "Операции для управления посетителями")
 public class VisitorController {
-
     private final VisitorService visitorService;
-
-    public VisitorController(VisitorService visitorService) {
-        this.visitorService = visitorService;
-    }
 
     @PostMapping
     @Operation(summary = "Создать нового посетителя", description = "Создает нового посетителя с предоставленными данными")
     @ApiResponse(responseCode = "201", description = "Посетитель успешно создан")
     public ResponseEntity<VisitorResponseDto> createVisitor(@Valid @RequestBody VisitorRequestDto requestDto) {
         VisitorResponseDto responseDto = visitorService.save(requestDto);
-        return ResponseEntity.ok(responseDto);
+        //Поправляем ошибочки, надеюсь вы ничего не видели
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @GetMapping("/{id}")
@@ -61,12 +62,7 @@ public class VisitorController {
     public ResponseEntity<VisitorResponseDto> updateVisitor(
             @Parameter(description = "ID посетителя для обновления") @PathVariable Long id,
             @Valid @RequestBody VisitorRequestDto requestDto) {
-        VisitorResponseDto responseDto = visitorService.update(id, requestDto);
-        if (responseDto != null) {
-            return ResponseEntity.ok(responseDto);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(visitorService.update(id, requestDto));
     }
 
     @DeleteMapping("/{id}")
@@ -75,11 +71,7 @@ public class VisitorController {
     @ApiResponse(responseCode = "404", description = "Посетитель не найден")
     public ResponseEntity<Void> deleteVisitor(
             @Parameter(description = "ID посетителя для удаления") @PathVariable Long id) {
-        boolean isDeleted = visitorService.remove(id);
-        if (isDeleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        visitorService.remove(id);
+        return ResponseEntity.noContent().build();
     }
 }

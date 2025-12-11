@@ -5,11 +5,12 @@ import com.practice.backend.dto.response.VisitorResponseDto;
 import com.practice.backend.entity.Visitor;
 import com.practice.backend.mapper.VisitorMapper;
 import com.practice.backend.repository.VisitorRepository;
-import jakarta.validation.Valid;
+//Хз почему у меня Valid был в сервисе
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +24,8 @@ public class VisitorService {
         return visitorMapper.toResponseDto(savedVisitor);
     }
 
-    public boolean remove(Long id) {
-        return visitorRepository.remove(id);
+    public void remove(Long id) {
+        visitorRepository.deleteById(id);
     }
 
     public List<VisitorResponseDto> findAll() {
@@ -34,15 +35,15 @@ public class VisitorService {
     }
 
     public VisitorResponseDto findById(Long id) {
-        Visitor visitor = visitorRepository.findById(id);
-        return visitor != null ? visitorMapper.toResponseDto(visitor) : null;
+        Visitor visitor = visitorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitor not found with id: " + id));
+        return visitorMapper.toResponseDto(visitor);
     }
 
-    public VisitorResponseDto update(Long id, @Valid VisitorRequestDto requestDto) {
-        Visitor existingVisitor = visitorRepository.findById(id);
-        if (existingVisitor == null) {
-            throw new RuntimeException("Пользователь не найден: " + id);
-        }
+    public VisitorResponseDto update(Long id, VisitorRequestDto requestDto) {
+        Visitor existingVisitor = visitorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitor not found with id: " + id));
+
         existingVisitor.setName(requestDto.getName());
         existingVisitor.setAge(requestDto.getAge());
         existingVisitor.setGender(requestDto.getGender());
