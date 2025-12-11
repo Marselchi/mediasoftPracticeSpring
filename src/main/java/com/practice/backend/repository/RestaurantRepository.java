@@ -1,39 +1,20 @@
 package com.practice.backend.repository;
 
 import com.practice.backend.entity.Restaurant;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import lombok.Data;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
-@Data
 @Repository
-public class RestaurantRepository {
-    private final List<Restaurant> restaurants = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
+public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
-    public Restaurant save(Restaurant restaurant) {
-        if (restaurant.getId() == null) {
-            restaurant.setId(idGenerator.getAndIncrement());
-        }
-        restaurants.add(restaurant);
-        return restaurant;
-    }
+    List<Restaurant> findByUserRatingGreaterThanEqual(BigDecimal minRating);
 
-    public boolean remove(Long id) {
-        return restaurants.removeIf(rest -> rest.getId().equals(id));
-    }
-
-    public List<Restaurant> findAll() {
-        return new ArrayList<>(restaurants);
-    }
-
-    public Restaurant findById(Long id) {
-        return restaurants.stream()
-                .filter(rest -> rest.getId().equals(id))
-                .findFirst()
-                .orElse(null);
-    }
+    // Напишу одну с Query что-ли
+    @Query("SELECT r FROM Restaurant r WHERE r.userRating >= :minRating ORDER BY r.userRating DESC")
+    List<Restaurant> findRestaurantsWithRatingAbove(@Param("minRating") BigDecimal minRating);
 }

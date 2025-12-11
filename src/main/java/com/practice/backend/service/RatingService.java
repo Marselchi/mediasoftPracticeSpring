@@ -3,17 +3,22 @@ package com.practice.backend.service;
 import com.practice.backend.dto.request.RatingRequestDto;
 import com.practice.backend.dto.response.RatingResponseDto;
 import com.practice.backend.entity.Rating;
+import com.practice.backend.entity.RatingId;
 import com.practice.backend.entity.Restaurant;
 import com.practice.backend.mapper.RatingMapper;
 import com.practice.backend.repository.RatingRepository;
 import com.practice.backend.repository.RestaurantRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,34 +28,16 @@ public class RatingService {
     private final RatingMapper ratingMapper;
 
     public RatingResponseDto save(RatingRequestDto requestDto) {
-        //Не уверен кстати нужно ли возвращать при сейве, по хорошему
-        //наверное нет, но оставлю так т.к четко не указано
         Rating rating = ratingMapper.toEntity(requestDto);
         Rating savedRating = ratingRepository.save(rating);
         recalculateRestaurantRating(requestDto.getRestaurantId());
         return ratingMapper.toResponseDto(savedRating);
     }
 
-    public boolean remove(Long id) {
-        boolean removed = ratingRepository.remove(id);
-        for (Restaurant restaurant : restaurantRepository.findAll()) {
-            recalculateRestaurantRating(restaurant.getId());
-        }
-        return removed;
-    }
-
-    public RatingResponseDto update(Long id, @Valid RatingRequestDto requestDto) {
-        Rating existingRating = ratingRepository.findById(id);
-        if (existingRating == null) {
-            throw new RuntimeException("Отзыв не найден: " + id);
-        }
-        existingRating.setRestaurantId(requestDto.getRestaurantId());
-        existingRating.setVisitorId(requestDto.getVisitorId());
-        existingRating.setRating(requestDto.getRating());
-        existingRating.setReviewText(requestDto.getReviewText());
-
-        Rating updatedRating = ratingRepository.save(existingRating);
-        return ratingMapper.toResponseDto(updatedRating);
+    public void remove(Long visitorId, Long restaurantId) {
+        RatingId ratingId = new RatingId(visitorId, restaurantId);
+        ratingRepository.deleteById(ratingId);
+        recalculateRestaurantRating(restaurantId);
     }
 
     public List<RatingResponseDto> findAll() {
@@ -59,20 +46,28 @@ public class RatingService {
                 .toList();
     }
 
-    public RatingResponseDto findById(Long id) {
-        Rating rating = ratingRepository.findById(id);
-        return rating != null ? ratingMapper.toResponseDto(rating) : null;
+    public Optional<RatingResponseDto> findById(Long visitorId, Long restaurantId) {
+        RatingId ratingId = new RatingId(visitorId, restaurantId);
+        Optional<Rating> rating = ratingRepository.findById(ratingId);
+        return rating.map(ratingMapper::toResponseDto);
+    }
+
+    public Page<RatingResponseDto> findAllWithPagination(Pageable pageable) {
+        Page<Rating> ratingsPage = ratingRepository.findAll(pageable);
+        return ratingsPage.map(ratingMapper::toResponseDto);
+    }
+
+    public Page<RatingResponseDto> findRatingsByRestaurantId(Long restaurantId, Pageable pageable) {
+        Page<Rating> ratingsPage = ratingRepository.findByRestaurantId(restaurantId, pageable);
+        return ratingsPage.map(ratingMapper::toResponseDto);
     }
 
     private void recalculateRestaurantRating(Long restaurantId) {
-        List<Rating> ratings = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getRestaurantId().equals(restaurantId))
-                .toList();
-
+        List<Rating> ratings = ratingRepository.findByRestaurantId(restaurantId);
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + restaurantId));
         if (ratings.isEmpty()) {
-            restaurantRepository.findAll().stream()
-                    .filter(r -> r.getId().equals(restaurantId))
-                    .findFirst().ifPresent(restaurant -> restaurant.setUserRating(BigDecimal.ZERO));
+            restaurant.setUserRating(BigDecimal.ZERO);
             return;
         }
 
@@ -82,8 +77,7 @@ public class RatingService {
 
         BigDecimal average = sum.divide(BigDecimal.valueOf(ratings.size()), 2, RoundingMode.HALF_UP);
 
-        restaurantRepository.findAll().stream()
-                .filter(r -> r.getId().equals(restaurantId))
-                .findFirst().ifPresent(restaurant -> restaurant.setUserRating(average));
+        restaurant.setUserRating(average);
+        restaurantRepository.save(restaurant);
     }
 }

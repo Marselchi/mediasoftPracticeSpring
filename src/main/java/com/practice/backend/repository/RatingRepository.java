@@ -1,36 +1,24 @@
 package com.practice.backend.repository;
 
 import com.practice.backend.entity.Rating;
+import com.practice.backend.entity.RatingId;
+import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import lombok.Data;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
-@Data
 @Repository
-public class RatingRepository {
-    private final List<Rating> ratings = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
+public interface RatingRepository extends JpaRepository<Rating, RatingId> {
 
-    public Rating save(Rating rating) {
-        ratings.add(rating);
-        return rating;
-    }
+    @Override
+    @NonNull
+    //Сортировка внутри контроллера настраивается
+    Page<Rating> findAll(@NonNull Pageable pageable);
 
-    public boolean remove(Long id) {
-         return ratings.removeIf(rating -> rating.getVisitorId().equals(id));
-    }
+    Page<Rating> findByRestaurantId(Long restaurantId, Pageable pageable);
 
-    public List<Rating> findAll() {
-        return new ArrayList<>(ratings);
-    }
-
-    public Rating findById(Long id) {
-        return ratings.stream()
-                .filter(rating -> rating.getVisitorId().equals(id))
-                .findFirst()
-                .orElse(null);
-    }
+    List<Rating> findByRestaurantId(Long restaurantId);
 }

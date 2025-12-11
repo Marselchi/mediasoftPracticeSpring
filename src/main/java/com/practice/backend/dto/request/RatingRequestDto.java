@@ -10,6 +10,9 @@ import jakarta.validation.constraints.Max;
 @Value
 public class RatingRequestDto {
 
+    //По-хорошему бы сделать дтошки для разных методов
+    //Так как при апдейте например idшники идут и в path и тут
+    //Но в тз это не указано, значит не рыпаемся
     @Schema(description = "ID посетителя", example = "1")
     @NotNull(message = "ID посетителя обязательно")
     Long visitorId;
